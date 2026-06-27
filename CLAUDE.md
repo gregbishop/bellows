@@ -1,10 +1,17 @@
 # bellows
 
-Spring Boot 4.1 / Java 25 (LTS) / Gradle project.
+Spring Boot 4.1 / Java 25 (LTS) / Gradle **multi-module** project.
+
+## Modules
+- `bellows-core` — core **library** (plain `jar`, `bootJar` disabled). Holds the
+  code for now; a runnable application module will be added later.
 
 ## Build & test
-- `./gradlew build` — compile, run tests, assemble
-- `./gradlew bootRun` — run the application
+- `./gradlew build` — build + test all modules
+- `./gradlew :bellows-core:test` — build/test a single module
+- Root `build.gradle` is the aggregator and holds shared config (Java toolchain,
+  repositories, plugins) applied to every module via `subprojects {}`. Per-module
+  dependencies and packaging live in each module's own `build.gradle`.
 - Java toolchain is **25 (LTS)**; dependency and plugin versions are managed in
   `gradle/libs.versions.toml` (Gradle version catalog).
 
@@ -12,6 +19,44 @@ Spring Boot 4.1 / Java 25 (LTS) / Gradle project.
 - Commit messages follow **Conventional Commits** (template in `.gitmessage`).
 - `main` is protected — changes go through pull requests (admin/owner bypass).
   PRs use `.github/pull_request_template.md`.
+- **Every commit must pass the validation gate.** A git `pre-commit` hook
+  (`.githooks/pre-commit`, enabled via `git config core.hooksPath .githooks`)
+  runs `./gradlew check` and aborts the commit on failure. Add future checks
+  there (or wire them into the Gradle `check` task). **Never bypass the gate** —
+  `--no-verify`/`-n` and `core.hooksPath` overrides are blocked for the AI by a
+  Claude `PreToolUse` hook (`.claude/hooks/block-commit-bypass.sh`). If
+  validation fails, fix it. Use the `/commit` command for an ergonomic,
+  gate-respecting commit.
+- **Development is test-driven (TDD).** Write a failing test first, implement to
+  green, then refactor. Production code is only written to satisfy a failing test.
+
+## Development workflow (TDD)
+Drive feature work with the `/tdd <task>` command, which orchestrates the dev
+agents through a strict red-green-refactor cycle:
+
+1. **Plan** — `/plan` produces an interactive, edge-case-grilled plan in
+   `.agents/plans/` (input to TDD).
+2. **Red** — `test-writer` writes failing tests under a module's `src/test/`
+   (e.g. `bellows-core/src/test/`); never touches `src/main/`. `qa` checks the
+   suite for gaps and loops back to add tests.
+3. **Approve** — you review and approve the failing tests before any code.
+4. **Green** — `implementer` writes module `src/main/` code until
+   `./gradlew test` is green; it must NEVER modify tests.
+5. **Refactor/verify** — `code-reviewer` (correctness + reuse/cleanup) and
+   `security` (vulnerabilities) review the diff.
+
+### Agents (`.claude/agents/`)
+| Agent | Role | Writes |
+| --- | --- | --- |
+| `test-writer` | TDD red — failing tests | `**/src/test/**` only |
+| `implementer` | TDD green — make tests pass | `**/src/main/**` only, never tests |
+| `qa` | finds testing gaps | read-only |
+| `code-reviewer` | correctness + reuse/cleanup review | read-only |
+| `security` | security review | read-only |
+
+The test/code separation is the core guardrail: the agent that writes code
+cannot rewrite tests to pass. This is currently enforced by each agent's
+instructions (prompt-level), not a hard sandbox.
 
 ## Planning
 Whenever you create a plan — in built-in plan mode, when asked to "create a
