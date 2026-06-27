@@ -1,1 +1,3 @@
 rootProject.name = 'bellows'
+
+include 'bellows-core'

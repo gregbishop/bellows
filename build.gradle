@@ -1,29 +1,30 @@
 plugins {
-	id 'java'
-	alias(libs.plugins.spring.boot)
-	alias(libs.plugins.spring.dependency.management)
+	alias(libs.plugins.spring.boot) apply false
+	alias(libs.plugins.spring.dependency.management) apply false
 }
 
-group = 'net.gregbishop'
-version = '0.0.1-SNAPSHOT'
-description = 'bellows'
+// Root project is an aggregator; shared configuration lives here and is applied
+// to every module. Module-specific dependencies and packaging live in each
+// module's own build.gradle.
+subprojects {
+	apply plugin: 'java-library'
+	apply plugin: 'org.springframework.boot'
+	apply plugin: 'io.spring.dependency-management'
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(25)
+	group = 'net.gregbishop'
+	version = '0.0.1-SNAPSHOT'
+
+	java {
+		toolchain {
+			languageVersion = JavaLanguageVersion.of(25)
+		}
 	}
-}
 
-repositories {
-	mavenCentral()
-}
+	repositories {
+		mavenCentral()
+	}
 
-dependencies {
-	implementation libs.spring.boot.starter.webmvc
-	testImplementation libs.spring.boot.starter.webmvc.test
-	testRuntimeOnly libs.junit.platform.launcher
-}
-
-tasks.named('test') {
-	useJUnitPlatform()
+	tasks.named('test') {
+		useJUnitPlatform()
+	}
 }

@@ -1,0 +1,16 @@
+description = 'bellows core library'
+
+// Library module — not an executable Spring Boot application.
+// Disable the bootJar packaging and produce a plain (reusable) jar instead.
+tasks.named('bootJar') {
+	enabled = false
+}
+tasks.named('jar') {
+	enabled = true
+}
+
+dependencies {
+	api libs.spring.boot.starter.webmvc
+	testImplementation libs.spring.boot.starter.webmvc.test
+	testRuntimeOnly libs.junit.platform.launcher
+}
