@@ -1,6 +1,17 @@
 plugins {
 	alias(libs.plugins.spring.boot) apply false
 	alias(libs.plugins.spring.dependency.management) apply false
+	alias(libs.plugins.spotless) apply false
+}
+
+// Enable the repository git hooks on first build so the commit validation gate
+// (.githooks/pre-commit) can never be silently skipped on a fresh clone.
+tasks.register('installGitHooks', Exec) {
+	group = 'setup'
+	description = 'Point git at the repo hooks (core.hooksPath=.githooks).'
+	onlyIf { file("${rootDir}/.git").exists() }
+	commandLine 'git', 'config', 'core.hooksPath', '.githooks'
+	ignoreExitValue = true
 }
 
 // Root project is an aggregator; shared configuration lives here and is applied
@@ -10,6 +21,8 @@ subprojects {
 	apply plugin: 'java-library'
 	apply plugin: 'org.springframework.boot'
 	apply plugin: 'io.spring.dependency-management'
+	apply plugin: 'com.diffplug.spotless'
+	apply plugin: 'checkstyle'
 
 	group = 'net.gregbishop'
 	version = '0.0.1-SNAPSHOT'
@@ -24,7 +37,32 @@ subprojects {
 		mavenCentral()
 	}
 
+	// Static analysis (linter) — runs as part of `check`.
+	checkstyle {
+		toolVersion = '10.26.1'
+		configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+	}
+
+	// Formatting — native steps only. No opinionated formatter engine (no
+	// google/palantir-java-format), so there's no 2-space indent and no
+	// automatic line-wrapping. 4-space indentation is enforced.
+	// `spotlessCheck` runs as part of `check`; `spotlessApply` auto-fixes.
+	spotless {
+		java {
+			target 'src/**/*.java'
+			leadingTabsToSpaces(4)
+			importOrder()
+			trimTrailingWhitespace()
+			endWithNewline()
+		}
+	}
+
 	tasks.named('test') {
 		useJUnitPlatform()
+	}
+
+	// Keep the commit gate's git hooks enabled whenever verification runs.
+	tasks.named('check') {
+		dependsOn rootProject.tasks.named('installGitHooks')
 	}
 }
