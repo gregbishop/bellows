@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+# Commit validation gate. Runs all verification before a commit is allowed.
+# Add future checks (linters, static analysis, etc.) below — or wire them into
+# the Gradle `check` task so they run here automatically.
+#
+# This hook is shared via the repo. Enable it once per clone with:
+#   git config core.hooksPath .githooks
+#
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+echo "[pre-commit] Running validation: ./gradlew check"
+if ! ./gradlew check --no-daemon; then
+	echo "[pre-commit] Validation FAILED — commit aborted. Fix the issues and retry." >&2
+	echo "[pre-commit] Do not bypass with --no-verify; the gate is mandatory." >&2
+	exit 1
+fi
+
+echo "[pre-commit] Validation passed."
