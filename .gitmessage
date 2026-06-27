@@ -1,0 +1,19 @@
+# <type>(<scope>): <subject>
+#   └ type: feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert
+#   └ scope: optional area of the codebase (e.g. api, build, web)
+#   └ subject: imperative mood, no trailing period, ≤50 chars
+#
+# Examples:
+#   feat(api): add bellows ignition endpoint
+#   fix(build): pin dependency-management plugin to 1.1.7
+#
+# --- Body (wrap at 72) --------------------------------------------------
+# Explain WHAT changed and WHY (not how). Blank line separates it from
+# the subject above.
+#
+#
+# --- Footer -------------------------------------------------------------
+# Reference issues and breaking changes, e.g.:
+#   Closes #123
+#   Refs #456
+#   BREAKING CHANGE: <description>
