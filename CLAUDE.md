@@ -9,30 +9,41 @@ Spring Boot 4.1 / Java 25 (LTS) / Gradle **multi-module** project.
 ## Build & test
 - `./gradlew build` — build + test all modules
 - `./gradlew :bellows-core:test` — build/test a single module
+- `./gradlew check` — verification: tests + **Spotless** (formatting) +
+  **Checkstyle** (lint). This is the commit/CI gate.
+- `./gradlew spotlessApply` — auto-fix formatting. Style: **4-space indentation**,
+  native Spotless steps only (no google/palantir formatter, no auto line-wrapping).
+  Checkstyle config: `config/checkstyle/checkstyle.xml`.
+- `./gradlew installGitHooks` — enable the repo git hooks (also runs automatically
+  as part of `check`).
 - Root `build.gradle` is the aggregator and holds shared config (Java toolchain,
-  repositories, plugins) applied to every module via `subprojects {}`. Per-module
-  dependencies and packaging live in each module's own `build.gradle`.
+  repositories, plugins, Spotless/Checkstyle) applied to every module via
+  `subprojects {}`. Per-module dependencies and packaging live in each module's
+  own `build.gradle`.
 - Java toolchain is **25 (LTS)**; dependency and plugin versions are managed in
   `gradle/libs.versions.toml` (Gradle version catalog).
 
 ## Conventions
 - Commit messages follow **Conventional Commits** (template in `.gitmessage`).
 - `main` is protected — changes go through pull requests (admin/owner bypass).
-  PRs use `.github/pull_request_template.md`.
+  PRs use `.github/pull_request_template.md`. CI (`.github/workflows/ci.yml`) runs
+  `./gradlew check` on every PR and is a **required status check** before merge.
 - **Every commit must pass the validation gate.** A git `pre-commit` hook
-  (`.githooks/pre-commit`, enabled via `git config core.hooksPath .githooks`)
-  runs `./gradlew check` and aborts the commit on failure. Add future checks
-  there (or wire them into the Gradle `check` task). **Never bypass the gate** —
-  `--no-verify`/`-n` and `core.hooksPath` overrides are blocked for the AI by a
-  Claude `PreToolUse` hook (`.claude/hooks/block-commit-bypass.sh`). If
-  validation fails, fix it. Use the `/commit` command for an ergonomic,
-  gate-respecting commit.
+  (`.githooks/pre-commit`, enabled via `git config core.hooksPath .githooks` or
+  `./gradlew installGitHooks`) runs `./gradlew check` and aborts the commit on
+  failure. Add future checks there (or wire them into the Gradle `check` task).
+  **Never bypass the gate** — `--no-verify`/`-n` and `core.hooksPath` overrides are
+  blocked for the AI by a Claude `PreToolUse` hook
+  (`.claude/hooks/block-commit-bypass.sh`). If validation fails, fix it. Use the
+  `/commit` command for an ergonomic, gate-respecting commit.
 - **Development is test-driven (TDD).** Write a failing test first, implement to
   green, then refactor. Production code is only written to satisfy a failing test.
 
 ## Development workflow (TDD)
-Drive feature work with the `/tdd <task>` command, which orchestrates the dev
-agents through a strict red-green-refactor cycle:
+For issue-driven work, `/work-issue <#>` runs the whole outer loop: read the
+issue → branch → `/plan` → `/tdd` → open a PR that closes it. To drive a single
+feature directly, use `/tdd <task>`, which orchestrates the dev agents through a
+strict red-green-refactor cycle:
 
 1. **Plan** — `/plan` produces an interactive, edge-case-grilled plan in
    `.agents/plans/` (input to TDD).
